@@ -13,4 +13,4 @@ data class Place(
     val formatted_address: String
 )
 
-data class Location(val lat: String, val lng: String)
+data class Location(val lng: String, val lat: String)

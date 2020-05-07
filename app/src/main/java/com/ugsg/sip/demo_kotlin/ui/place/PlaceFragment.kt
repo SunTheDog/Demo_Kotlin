@@ -1,5 +1,6 @@
 package com.ugsg.sip.demo_kotlin.ui.place
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,11 +12,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.hjq.toast.ToastUtils
 import com.ugsg.sip.demo_kotlin.R
+import com.ugsg.sip.demo_kotlin.ui.weather.WeatherActivity
 import kotlinx.android.synthetic.main.fragment_place.*
 
 class PlaceFragment : Fragment() {
 
     val viewModel by lazy { ViewModelProvider(this).get(PlaceViewModel::class.java) }
+
 
     private lateinit var adapter: PlaceAdapter
 
@@ -31,36 +34,49 @@ class PlaceFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        if (viewModel.isPlaceSave()) {
+            val savePlace = viewModel.getSavePlace()
+            val intent = Intent(context, WeatherActivity::class.java).apply {
+                putExtra("location_lng", savePlace.location.lng)
+                putExtra("location_lat", savePlace.location.lat)
+                putExtra("place_name", savePlace.name)
+            }
+
+            startActivity(intent)
+            activity?.finish()
+            return
+
+        }
+
         recyclerView.layoutManager = LinearLayoutManager(activity)
-        adapter = PlaceAdapter(viewModel.placesList)
+        adapter = PlaceAdapter(viewModel.place, this)
         recyclerView.adapter = adapter
 
-        searchPlaceEdit.addTextChangedListener {
-            val content = it.toString()
-            if (content.isNotEmpty()) {
-                viewModel.searchPlaces(content)
 
+        searchPlaceEdit.addTextChangedListener {
+            val searchStr = it.toString()
+            if (searchStr.isNotEmpty()) {
+                viewModel.searchPlaces(searchStr)
             } else {
                 recyclerView.visibility = View.GONE
                 bgImageView.visibility = View.VISIBLE
-                viewModel.placesList.clear()
+                viewModel.place.clear()
                 adapter.notifyDataSetChanged()
             }
         }
 
         viewModel.placeLiveData.observe(this, Observer {
-            val places = it.getOrNull()
-            if (places != null) {
+            val place = it.getOrNull()
+            if (place != null) {
                 recyclerView.visibility = View.VISIBLE
                 bgImageView.visibility = View.GONE
-                viewModel.placesList.clear()
-                viewModel.placesList.addAll(places)
+                viewModel.place.addAll(place)
                 adapter.notifyDataSetChanged()
             } else {
-                ToastUtils.show("获取信息失败")
+                ToastUtils.show("获取城市信息失败")
             }
-
         })
+
 
     }
 
